@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1 {
+    @apply text-2xl;
+  }
+  h2 {
+    @apply text-xl;
+  }
+  
+  #nav a.activepage {
+	@apply flex justify-between border-l pl-4 -ml-px text-sky-500 border-current font-semibold;
+  }
+
+  button[aria-selected="true"] {
+	@apply border-b py-3 transition focus:[&:not(:focus-visible)]:outline-none border-emerald-500 text-emerald-400;
+  }
+  
+  button[aria-selected="false"] {
+	 @apply border-b py-3 transition focus:[&:not(:focus-visible)]:outline-none border-transparent text-zinc-400 hover:text-zinc-300;
+  }
+  
+}

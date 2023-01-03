@@ -1,0 +1,23 @@
+# Node stuff
+node_modules/
+build/
+npm-debug.log
+
+# Tailwind stuff
+tailwindcss/
+tailwindcss
+output.css
+output.css.map
+style.css
+style.css.map
+
+
+# Envs
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# Key test
+# tests.r

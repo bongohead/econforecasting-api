@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="/static/css/style.css" rel="stylesheet">
+</head>
+
+
+<body>
+
+	<!-- start navbar -->
+	<header class="fixed inset-x-0 top-0 z-50 flex items-center justify-between px-3 py-1 border-b backdrop-blur border-slate-400/40" style="background-color: rgba(255, 255, 255, .5)"> 
+		<div class="flex items-center flex-grow basis-0">
+		  <a href="" class="text-lg font-semibold tracking-tight text-slate-900">
+			Econforecasting.com API Docs
+		  </a>
+		</div>
+
+		<!--
+		<form action="https://duckduckgo.com/" class="md:w-80 lg:w-96">
+		  <span class="relative flex items-center group">
+			<svg aria-hidden="true" viewBox="0 0 20 20" class="absolute w-4 h-4 ml-3 fill-slate-400 group-hover:fill-slate-500 group-focus:fill-slate-500"><path d="M16.293 17.707a1 1 0 0 0 1.414-1.414l-1.414 1.414ZM9 14a5 5 0 0 1-5-5H2a7 7 0 0 0 7 7v-2ZM4 9a5 5 0 0 1 5-5V2a7 7 0 0 0-7 7h2Zm5-5a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7v2Zm8.707 12.293-3.757-3.757-1.414 1.414 3.757 3.757 1.414-1.414ZM14 9a4.98 4.98 0 0 1-1.464 3.536l1.414 1.414A6.98 6.98 0 0 0 16 9h-2Zm-1.464 3.536A4.98 4.98 0 0 1 9 14v2a6.98 6.98 0 0 0 4.95-2.05l-1.414-1.414Z"></path></svg>
+			<input type="text" name="q" placeholder="Search docs…" class="w-full py-2 pl-10 pr-2 border rounded bg-slate-100 placeholder-slate-400 text-slate-800 border-slate-100 outline outline-offset-2 outline-2 outline-transparent hover:border-slate-200 focus:border-slate-200 focus:outline-slate-600" />
+		  </span>
+		  <input type="hidden" name="sites" value="spinalcms.com">
+		  <input type="submit" value="Search" class="sr-only" />
+		</form>
+		-->
+		<div class="items-center justify-end flex-grow hidden basis-0 md:flex">
+		  <a href="https://econforecasting.com" class="px-4 py-2 text-sm font-semibold rounded bg-slate-900 text-slate-50 transition ease-in-out delay-75 hover:scale-105 duration-200">
+			Go to homepage
+		  </a>
+		</div>
+	</header>
+	<!-- end navbar -->
+
+	<!-- strat wrapper -->
+	<div class="overflow-hidden">
+		<main class="mx-auto px-6 sm:px-6 md:px-8" style="max-width:90rem">
+			{% include 'sidebar.html.twig' %}
+			<div class="lg:pl-[19.5rem]">
+				<div class="max-w-3xl mx-auto relative z-20 pt-32 xl:max-w-none px-6">
+					{% block content %}{% endblock %}
+					{% include 'footer.html.twig' %}
+				</div>
+			</div>
+		</main>
+	</div>
+	
+	<script src="/static/js/prism.js" ></script>
+	<script src="/static/js/flowbite.js"></script>
+	<script src="/static/js/scripts.js"></script>
+</body>
+</html>
