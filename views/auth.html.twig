@@ -1,12 +1,166 @@
 {% extends "base.html.twig" %}
 {% block content %}
 
-<h1>Authentication</h1>
+{% set title = 'Authentication' %}
+{% set description = '
+<p>
+Our API uses <a href="https://datatracker.ietf.org/doc/html/rfc7523">RFC 7523</a> for using JSON web tokens in an OAuth authorization flow. 
+This involves a three-stage process where:
+</p>
+
+<ol>
+	<li>The client first sends a <span class="font-mono font-semibold text-slate-500">POST</span> request with user credentials to the authorization endpoint. Please <a href="mailto:charles@econforecasting.com" class="underline hover:no-underline">contact us</a> if your credentials are invalid.</li>
+	<li>The server validates the user credentials and responds with an authorization token in JSON web token (JWT) format.
+	<li>The client can now make requests to data endpoints, while sending the token in the header for authorization. The token does not need to be refreshed until it expires 24 hours after original assignment.</li>
+</ol>
+' %}
+
+{% set requires_auth = '0' %}
+
+{% set next_name = 'Get latest forecast values' %}
+{% set next_href = '/docs/get-forecast-values' %}
+
+
+
+{% set endpoints = [
 
 
 
 
 
+{
+'n': '1',
+'request_type': 'POST',
+'endpoint_url': '/v1/get-token',
+'title': 'Return JSON web token',
+'description': '',
+'req_attributes': [
+	{'name': 'username', 'type': 'string', 'description': 'Your username.'},
+	{'name': 'private_key', 'type': 'string', 'description': 'Your assigned passphrase.'}
+],
+'ret_attributes': [
+	{'name': 'varname', 'type': 'integer', 'description': 'The number of results to return, 10000 max.'}
+],
+'request_bash': '
+curl -G https://api.protocol.chat/v1/contacts \
+  -H "Authorization: Bearer {token}" \
+  -d active=true \
+  -d limit=10
+',
+'request_python': '
+import requests
 
+url = "https://www.w3schools.com/python/demopage.php"
+myobj = {"somekey": "somevalue"}
+
+x = requests.post(url, json = myobj)
+
+print(x.text)						
+',
+'request_r': '
+library(httr)
+
+httr::GET("test")					
+',
+'response_json': '
+{
+  "short_name": "Weather",
+  "name": "Weather: Do I need an umbrella?",
+  "icons": [
+    {
+      "src": "/images/icons-vector.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/images/icons-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/images/icons-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
+'
+},
+
+
+
+
+{
+'n': '2',
+'request_type': 'GET',
+'endpoint_url': '/v1/check-token',
+'title': 'Validate JSON web token',
+'description': '',
+'req_attributes': [
+	{'name': 'username', 'type': 'string', 'description': 'Your username.'},
+	{'name': 'private_key', 'type': 'string', 'description': 'Your assigned passphrase.'}
+],
+'ret_attributes': [
+	{'name': 'varname', 'type': 'integer', 'description': 'The number of results to return, 10000 max.'}
+]
+}
+
+
+
+] %}
+
+
+{% set request_bash = '
+curl -G https://api.protocol.chat/v1/contacts \
+  -H "Authorization: Bearer {token}" \
+  -d active=true \
+  -d limit=10
+' %}
+
+{% set request_python = '
+import requests
+
+url = "https://www.w3schools.com/python/demopage.php"
+myobj = {"somekey": "somevalue"}
+
+x = requests.post(url, json = myobj)
+
+print(x.text)						
+' %}
+
+{% set request_r = '
+library(httr)
+
+httr::GET("test")					
+' %}
+
+{% set response_json = '
+{
+  "short_name": "Weather",
+  "name": "Weather: Do I need an umbrella?",
+  "icons": [
+    {
+      "src": "/images/icons-vector.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/images/icons-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/images/icons-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
+'%}
+
+
+{% include 'endpoints-template.html.twig' %}
+{% include 'footer.html.twig'  %}
 
 {% endblock %}
+

@@ -1,8 +1,31 @@
 {% extends "base.html.twig" %}
+
+{% block fancyimage %}
+        <div class="absolute inset-0 -z-10 mx-0 max-w-none overflow-hidden" style="display: ;">
+                <div class="absolute left-1/2 top-0 ml-[-0rem] h-[26rem] w-[80rem]">
+                        <div class="absolute inset-0 bg-gradient-to-r from-[#36b49f] to-[#DBFF75] opacity-40 [mask-image:radial-gradient(farthest-side_at_top,white,transparent)]">
+                                <svg aria-hidden="true" class="absolute inset-x-0 inset-y-[-50%] h-[200%] w-full skew-y-[-18deg] fill-black/40 stroke-black/50 mix-blend-overlay ">
+                                        <defs><pattern id=":R45km:" width="72" height="56" patternUnits="userSpaceOnUse" x="-12" y="4"><path d="M.5 56V.5H72" fill="none"></path></pattern></defs>
+                                        <rect width="100%" height="100%" stroke-width="0" fill="url(#:R45km:)"></rect>
+                                        <svg x="-12" y="4" class="overflow-visible">
+                                                <rect stroke-width="0" width="73" height="57" x="288" y="168"></rect>
+                                                <rect stroke-width="0" width="73" height="57" x="144" y="56"></rect>
+                                                <rect stroke-width="0" width="73" height="57" x="504" y="168"></rect>
+                                                <rect stroke-width="0" width="73" height="57" x="720" y="336"></rect>
+                                        </svg>
+                                </svg>
+                        </div>
+                        <svg viewBox="0 0 1113 440" aria-hidden="true" class="absolute top-0 left-1/2 ml-[-19rem] w-[69.5625rem] fill-white blur-[26px] dark:hidden">
+                                <path d="M.016 439.5s-9.5-300 434-300S882.516 20 882.516 20V0h230.004v439.5H.016Z"></path>
+                        </svg>
+                </div>
+        </div>
+{% endblock %}
+
 {% block content %}
 
 
-<div class="flex-auto max-w-6xl min-w-0 px-4 py-10 lg:max-w-none lg:pr-0 lg:pl-8 xl:px-16">
+<div class="flex-auto max-w-6xl min-w-0 px-4 pb-10">
 
 <!--
 	<div class="absolute inset-0 overflow-hidden -bottom-20 -top-20">
@@ -22,25 +45,6 @@
   
   <article class="">
   
-	<div class="absolute inset-0 -z-10 mx-0 max-w-none overflow-hidden" style="display: ;">
-		<div class="absolute left-1/2 top-0 ml-[-0rem] h-[26rem] w-[80rem]">
-			<div class="absolute inset-0 bg-gradient-to-r from-[#36b49f] to-[#DBFF75] opacity-40 [mask-image:radial-gradient(farthest-side_at_top,white,transparent)]">
-				<svg aria-hidden="true" class="absolute inset-x-0 inset-y-[-50%] h-[200%] w-full skew-y-[-18deg] fill-black/40 stroke-black/50 mix-blend-overlay ">
-					<defs><pattern id=":R45km:" width="72" height="56" patternUnits="userSpaceOnUse" x="-12" y="4"><path d="M.5 56V.5H72" fill="none"></path></pattern></defs>
-					<rect width="100%" height="100%" stroke-width="0" fill="url(#:R45km:)"></rect>
-					<svg x="-12" y="4" class="overflow-visible">
-						<rect stroke-width="0" width="73" height="57" x="288" y="168"></rect>
-						<rect stroke-width="0" width="73" height="57" x="144" y="56"></rect>
-						<rect stroke-width="0" width="73" height="57" x="504" y="168"></rect>
-						<rect stroke-width="0" width="73" height="57" x="720" y="336"></rect>
-					</svg>
-				</svg>
-			</div>
-			<svg viewBox="0 0 1113 440" aria-hidden="true" class="absolute top-0 left-1/2 ml-[-19rem] w-[69.5625rem] fill-white blur-[26px] dark:hidden">
-				<path d="M.016 439.5s-9.5-300 434-300S882.516 20 882.516 20V0h230.004v439.5H.016Z"></path>
-			</svg>
-		</div>
-	</div>
 
 	<header class="">
 	  <p class="text-base font-medium text-slate-500">
@@ -51,7 +55,7 @@
 		Quick start guide
 	  </h1>
 	</header>
-
+	<!--
 	<p class="mt-2 text-xl text-slate-600">
 	  Need to get started quickly with Spinal? You will learn all the basics in just minutes.
 	</p>
@@ -71,6 +75,7 @@
 		</p>
 	  </div>
 	</a>
+	-->
 
 	<h3 class="mt-16 text-base font-bold tracking-tight text-slate-900">
 	  Get set up quickly
@@ -78,13 +83,13 @@
 
 	<ul class="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2">
 	  <li>
-		<a href="#" class="block px-6 py-4 border rounded bg-slate-50 border-slate-100 hover:bg-white">
+		<a href="/docs/auth" class="block px-6 py-4 border rounded bg-slate-50 border-slate-100 hover:bg-white">
 		  <h4 class="font-bold tracking-tight text-slate-900">
-			Connect your GitHub account
+			OAuth2.0 authentication
 		  </h4>
 
 		  <p class="text-slate-600">
-			What you need to know before connecting your GitHub account
+			Programmatically send your credentials to receive a JWT for authentication
 		  </p>
 		</a>
 	  </li>
@@ -92,11 +97,11 @@
 	  <li>
 		<a href="#" class="block px-6 py-4 border rounded bg-slate-50 border-slate-100 hover:bg-white">
 		  <h4 class="font-bold tracking-tight text-slate-900">
-			Add your first content type
+			Get latest forecasts
 		  </h4>
 
 		  <p class="text-slate-600">
-			Learn what content types are in Spinal
+			Pull latest available forecasts for a given variable of interest
 		  </p>
 		</a>
 	  </li>
@@ -104,11 +109,11 @@
 	  <li class="">
 		<a href="#" class="block px-6 py-4 border rounded bg-slate-50 border-slate-100 hover:bg-white">
 		  <h4 class="font-bold tracking-tight text-slate-900">
-			Invite your first team member
+			Track forecasts over time
 		  </h4>
 
 		  <p class="text-slate-600">
-			You write your best marketing content with your team
+			Pull historical forecast vintages for a given variable of interest
 		  </p>
 		</a>
 	  </li>
@@ -116,11 +121,11 @@
 	  <li class="">
 		<a href="#" class="block px-6 py-4 border rounded bg-slate-50 border-slate-100 hover:bg-white">
 		  <h4 class="font-bold tracking-tight text-slate-900">
-			Publish your content
+			Explore datasets
 		  </h4>
 
 		  <p class="text-slate-600">
-			Publishing with Spinal is really just one click of a button
+			Check which datasets are available
 		  </p>
 		</a>
 	  </li>
@@ -130,7 +135,7 @@
 	  Have questions?
 	</h3>
 
-	<p class="text-slate-900">
+	<p class="text-slate-900 pt-5">
 	  Still have questions? <a href="mailto:charles@econforecasting.com" class="underline hover:no-underline">Email us</a>.
 	</p>
   </article>
@@ -143,8 +148,8 @@
 	  </dt>
 
 	  <dd class="mt-1">
-		<a href="#" class="text-base font-semibold text-slate-900 hover:underline">
-		  How does Spinal work?
+		<a href="/docs/auth" class="text-base font-semibold text-slate-900 hover:underline">
+		  Authentication
 		</a>
 	  </dd>
 	</div>

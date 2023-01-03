@@ -5,6 +5,14 @@ module.exports = {
   ],
   safelist: [
     '#nav a.activepage',
+	'.token.punctuation',
+	'.token.operator',
+	'.token.string',
+	'.token.keyword',
+	'.token.variable',
+	'.token.property',
+	'.bg-emerald-50/50',
+	'.w-full'
   ],
   theme: {
     typography: require('./typography'),

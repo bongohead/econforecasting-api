@@ -33,8 +33,8 @@ module.exports = {
 	// App-level middleware (above are tracked to specific routes)
 	rateLimiter: rateLimit({
 		windowMs: 1 * 15 * 60 * 1000, // 1 hrs in milliseconds
-		max: 100, // 100 requests for each IP per window
-		message: 'max 100 requests per 15 minutes',
+		max: 1000, // 100 requests for each IP per window
+		message: 'max 1000 requests per hour',
 		standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
 		legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 	}),

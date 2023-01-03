@@ -1,3 +1,6 @@
+## [v0.02]
+- Seperate internal oath
+
 ## [v0.01]
 - Added initial Express API build 
 - Added initial docs build
