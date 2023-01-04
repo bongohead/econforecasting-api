@@ -1,6 +1,11 @@
 {% extends "base.html.twig" %}
 {% block content %}
 
+{% set title = 'Get latest forecasts' %}
+{% set description = '
+<p>Get latest available forecasts for a specific variable.</p>
+' %}
+
 {% set prev_name = 'Authentication' %}
 {% set prev_href = '/docs/auth' %}
 {% set next_name = 'Get Vintage Forecast Values' %}
@@ -17,7 +22,7 @@
 'request_type': 'GET',
 'endpoint_url': '/v1/get-forecast-values',
 'title': 'Get latest forecast values',
-'description': '',
+'description': '<p>Test</p>',
 'req_attributes': [
 	{'name': 'varname', 'type': 'string', 'description': 'The name of the variable.'}
 ],
