@@ -9,6 +9,7 @@ const rateLimiter = require('./middleware').rateLimiter;
 const baseRoutes = require('./routes/base');
 const v1Routes = require('./routes/v1');
 const docsRoutes = require('./routes/docs');
+const v0Routes = require('./routes/v0');
 
 const port = 3002;
 const path = require('path');
@@ -41,6 +42,7 @@ app.use('/static', express.static(path.join(__dirname, 'static')));
 
 
 app.use('/', baseRoutes);
+app.use('/v0', v0Routes);
 app.use('/v1', v1Routes);
 app.use('/docs', docsRoutes);
 

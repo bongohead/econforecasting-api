@@ -116,9 +116,9 @@ router.post('/get_token', function(req, res) {
 /* Check if authenticateToken works. Require admin permissions.
  *
  */
-router.get('/get_test', authenticateToken, verifyPermissions('admin'), function(req, res) {
+router.get('/get_test', authenticateToken, verifyPermissions(['admin', 'webapp']), function(req, res) {
 
-	const varname = req.query.varname;
+	const varname = 'test';
 
 	if (is_invalid_params(varname)) res.status(400).send('Missing varname!')
 
@@ -150,7 +150,7 @@ router.get('/get_test', authenticateToken, verifyPermissions('admin'), function(
  * Username is required in POST body; other values optional.
  * If pk isn't set, one will be set and returned automatically.
  */
-router.post('/add_user', authenticateToken, verifyPermissions('admin'), function(req, res) {
+router.post('/add_user', authenticateToken, verifyPermissions(['admin']), function(req, res) {
 
 	const username = req.body.username;
 	const auth_key = req.body.auth_key || crypto.randomBytes(10).toString('hex');
