@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 
 // Middlewares
@@ -6,6 +7,8 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimiter = require('./middleware').rateLimiter;
+
+// Routes
 const baseRoutes = require('./routes/base');
 const v1Routes = require('./routes/v1');
 const docsRoutes = require('./routes/docs');
@@ -14,8 +17,8 @@ const v0Routes = require('./routes/v0');
 const port = 3002;
 const path = require('path');
 
-
 const app = express();
+
 app.listen(port, 300);
 
 // Disable Fingerprinting
@@ -51,6 +54,7 @@ app.use('/docs', docsRoutes);
 app.use((req, res, next) => {
   res.status(404).send("That page doesn't exist!")
 });
+
 app.use((err, req, res, next) => {
   console.error(err.stack)
   res.status(500).send('Something broke!')

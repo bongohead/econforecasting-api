@@ -103,8 +103,8 @@ GET(
 library(openssl)
 library(jose)
 
-key = '5c9eeb9eb5017211c4e0657e1f09322c8075a987cd32a32fe085cb7d98c1cace74f0e0022e9a9fa581f5510c1b1702feed0878eda666863e974469cce83443c7'
-jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IndlYmFwcCIsImF1dGhfbGV2ZWwiOiJ3ZWJhcHAiLCJpYXQiOjE2NzI5NzAyNjAsImV4cCI6MTY3Mjk3Mzg2MH0.Q6MT48BUn2gK2-WW2uc_J6CSIEILNtrTGuDsLRqdnnI'
+key = ''
+jwt = ''
 jwt_decode_hmac(jwt, secret = charToRaw(key))
 
 

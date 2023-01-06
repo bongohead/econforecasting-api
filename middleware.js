@@ -7,7 +7,9 @@ module.exports = {
 		const authHeader = req.headers['authorization'];
 		const token = authHeader && authHeader.split(' ')[1];
 
-		if (token == null) return res.status(403).send('Missing token');
+		if (token == null) {
+			return res.status(403).send('Missing token');
+		}
 
 		jwt.verify(token, String(process.env.TOKEN_SECRET), (err, decoded_token) => {
 			if (err) return res.status(403).send('Invalid token')
@@ -29,7 +31,6 @@ module.exports = {
 		}
 	},
 
-
 	// App-level middleware (above are tracked to specific routes)
 	rateLimiter: rateLimit({
 		windowMs: 1 * 15 * 60 * 1000, // 1 hrs in milliseconds
@@ -38,8 +39,6 @@ module.exports = {
 		standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
 		legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 	}),
-
-
 
 
 };

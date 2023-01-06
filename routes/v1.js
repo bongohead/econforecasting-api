@@ -1,21 +1,17 @@
 const CONSTANTS = require('dotenv').config({path: '.env'}).parsed;
 
 const router = require('express').Router();
+
 const Pool = require('pg').Pool; // Use Pool for non-transactional queries
+const pool = new Pool({user: process.env.DB_USER, host: process.env.DB_HOST, database: process.env.DB_DATABASE, password: process.env.DB_PASSWORD, port: process.env.DB_PORT});
+
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto'); // random numbers
 
-const authenticateToken = require('./../middleware').authenticateToken;
-const verifyPermissions = require('./../middleware').verifyPermissions;
+const { authenticateToken, verifyPermissions } = require('./../middleware')
+const { is_invalid_params } = require('./../helpers')
 
-const pool = new Pool({
-	user: CONSTANTS['DB_USER'],
-	host: CONSTANTS['DB_HOST'],
-	database: CONSTANTS['DB_DATABASE'],
-	password: CONSTANTS['DB_PASSWORD'],
-	port: CONSTANTS['DB_PORT']
-});
 
 
 /*** Default routes ***/
@@ -32,9 +28,6 @@ router.get('/get_token', function(req, res) {
 });
 
 
-const is_invalid_params = function(...required_params) {
-	return required_params.some(x => x == null || x === '');
-}
 
 
 /*** Check hash result  ***/
@@ -122,7 +115,7 @@ router.get('/get_test', authenticateToken, verifyPermissions(['admin', 'webapp']
 
 	if (is_invalid_params(varname)) res.status(400).send('Missing varname!')
 
-	query_text = `SELECT $1::text AS butt`
+	const query_text = `SELECT $1::text AS butt`
 
 	pool
 		.query({
@@ -206,7 +199,7 @@ router.post('/get_obs_all_vintages', authenticateToken, function(req, res) {
 		return;
 	}
 
-	query_text =
+	const query_text =
 		`SELECT
 			f.shortname,
 			TO_CHAR(vdate, 'yyyy-mm-dd') AS vdate,
@@ -260,7 +253,7 @@ router.post('/get_obs_last_vintage', authenticateToken, function(req, res) {
 		res.status(400).end();
 		return;
 	}
-	query_text =
+	const query_text =
 		`SELECT
 			f.shortname,
 			TO_CHAR(vdate, 'yyyy-mm-dd') AS vdate,
