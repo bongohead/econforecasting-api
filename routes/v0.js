@@ -2,6 +2,10 @@ const router = require('express').Router();
 
 const Pool = require('pg').Pool; // Use Pool for non-transactional queries
 const pool = new Pool({user: process.env.DB_USER, host: process.env.DB_HOST, database: process.env.DB_DATABASE, password: process.env.DB_PASSWORD, port: process.env.DB_PORT});
+// https://stackoverflow.com/a/57210469
+let types = require('pg').types
+types.setTypeParser(1700, val => parseFloat(val));
+types.setTypeParser(1082, val => val);
 
 const { authenticateToken, verifyPermissions } = require('./../middleware')
 const { is_invalid_params } = require('./../helpers')
@@ -10,86 +14,220 @@ const { is_invalid_params } = require('./../helpers')
 /* Check if authenticateToken works. Require admin permissions.
  *
  */
-router.get('/get_forecast_variable', authenticateToken, verifyPermissions(['admin', 'webapp']), function(req, res) {
+router.get('/get_forecast_variable', authenticateToken, verifyPermissions(['admin', 'webapp']), function(req, res, next) {
 
-	const varname = req.query.varname ?? '';
+	if (is_invalid_params(req.query, 'varname')) return res.status(400).send('Missing query parameters')
+	const varname = req.query.get('varname') ?? '';
 
-	if (is_invalid_params(varname)) return res.status(400).send('Missing varname!')
-
-	const query_text = 
-    `SELECT
+	const query_text = `
+	SELECT
 		varname, fullname, units, d1, hist_source_freq
     FROM forecast_variables
     WHERE varname = $1::text
-    LIMIT 1 `
+    LIMIT 1
+	`
 
-	pool
-		.query({
-			text: query_text,
-			values: [varname]
-			})
-		.then(db_result => {
-			const data = db_result.rows.map(function(x) {
-				return x;
-			});
-
-			res.status(200).json(data);
+	pool.query({
+		text: query_text,
+		values: [varname]
 		})
-		.catch(err => {
-			res.status(200).json({error: 1, error_code: err});
-		});
+	.then(db_result => {
+		const data = db_result.rows;
+		res.status(200).json(data);
+	})
+	.catch(err => next(err));
 });
 
 
-router.get('get_forecast_hist_values_last_vintage', authenticateToken, verifyPermissions(['admin', 'webapp'], function(req, res) {
+
+router.get('/get_hist_obs', authenticateToken, verifyPermissions(['admin', 'webapp']), function(req, res, next) {
 
 	// Returns the last historical data by the last vintage date for the given variable.
 	// Takes as input a string/comma-delimited string of varnames, a string/comma-delimited of freqs, and a string/comma-delimited/null of forms
 	// Allows selection of:
-	//  - 1+ varname (passing none returns nothing)
-	//  - 1+ frequency (passing none returns nothing)
-	//  - 0+ forms (passing none returns all forms)
+	//  - 1+ varname (passing none returns error)
+	//  - null, 1, or 2+ frequency (passing nothing returns highest frequency)
 
 	// Inputs for all elements are strings such that they can be casted to VARCHAR in postgresq
-	const varname = '{' + (req.query.varname ?? '').split('') + '}';  // If null, set as '{}'
-	const freq = '{' + (req.query.freq ?? '').split('') + '}';  // If null, set as '{}'
-	const form = '{' + (req.query.freq ?? '').split('') + '}';  // If null, set as '{}'
+	//   i.e. varname = ANY('{gdp, pce}'::VARCHAR[])
 
-// Inputs for all elements are strings such that they can be casted to VARCHAR in postgresq
-//   i.e. varname = ANY('{gdp, pce}'::VARCHAR[])
-// $vars_to_bind = array(
-// 	'varname' => '{'.implode(',', (array) $fromAjax['varname'] ?? '').'}',  // If null, set as '{}'
-// 	'freq' => '{'.implode(',', (array) $fromAjax['freq'] ?? '').'}', // If null, set as '{}'
-// 	'form' => isset($fromAjax['form']) ? '{'.implode(',', (array) $fromAjax['form']).'}' : '', // If null, set as ''
-// 	);
+	if (is_invalid_params(req.query, 'varname')) return res.status(400).send('Missing query varname')
+	const varnames = (req.query.get('varname') ?? '').split(',').slice(0, 5);  // Returns array of varnames
 
-// $form_str = $vars_to_bind['form'] != '' ? 'AND form = ANY(:form::VARCHAR[])' : '';
+	if (req.query.get('freq') == null) {
+		// Get lowest frequency available for each varname
+		const query_text = `
+		SELECT
+			b.varname, b.freq,
+			json_agg(json_build_object(
+				'date', b.date, 'vintage_date', b.vdate, 'value', ROUND(b.d1, 2), 'value2', ROUND(b.d2, 2)
+			)) AS data
+		FROM 
+			(
+			SELECT
+				varname, freq, MIN(freq_level) OVER (PARTITION BY varname) AS min_freq_level
+			FROM 
+				(
+				SELECT
+					varname, freq,
+					CASE
+						WHEN freq = 'm' THEN 0
+						WHEN freq = 'q' THEN 1
+						ELSE 2
+					END AS freq_level
+				FROM forecast_hist_values_v2_latest 
+				GROUP BY varname, freq
+				) c
+			) a
+		LEFT JOIN forecast_hist_values_v2_latest b
+			ON a.varname = b.varname AND a.freq = b.freq 
+		WHERE
+			a.varname = ANY ($1)
+			AND a.min_freq_level = a.min_freq_level	
+		GROUP BY b.varname, b.freq
+		LIMIT 10000
+		`;
 
-// $col_str = implode(',', array_merge(
-// 	isset($fromAjax['varname']) && count((array) $fromAjax['varname']) === 1 ? [] : ['varname'],
-// 	isset($fromAjax['freq']) && count((array) $fromAjax['freq']) === 1 ? [] : ['freq'],
-// 	isset($fromAjax['form']) && count((array) $fromAjax['form']) === 1 ? [] : ['form'],
-// 	['vdate', 'date', 'value']
-// 	));
+		pool.query({
+			text: query_text,
+			values: [varnames]
+			})
+		.then(db_result => {
+			const data = db_result.rows;
+			res.status(200).json(data);
+		})
+		.catch(err => next(err));
+
+	} else {
+
+		const freq = req.query.get('freq') ?? '';  // Returns array of varnames
+
+		const query_text = `
+		SELECT
+			varname, freq,
+			json_agg(json_build_object(
+				'date', date, 'vintage_date', vdate, 'value', ROUND(d1, 2), 'value2', ROUND(d2, 2)
+			)) AS data
+		FROM forecast_hist_values_v2_latest
+		WHERE
+			varname = ANY ($1)
+			AND freq = $2
+		GROUP BY varname, freq
+		LIMIT 10000
+		`;
+
+		pool.query({
+			text: query_text,
+			values: [varnames, freq]
+			})
+		.then(db_result => {
+			const data = db_result.rows;
+			res.status(200).json(data);
+		})
+		.catch(err => next(err));
+	}
+
+});
 
 
-// $forecast_hist_values = $sql -> select("
-// SELECT ${col_str}
-// FROM
-// (
-// 	SELECT 
-// 		freq, form, date, varname, MAX(vdate) as vdate, last(value, vdate) as VALUE -- Get value corresponding to latest vdate for each date
-// 	FROM forecast_hist_values
-// 	WHERE 
-// 		varname = ANY(:varname::VARCHAR[])
-// 		AND freq = ANY(:freq::VARCHAR[])
-// 		${form_str}
-// 	GROUP BY varname, form, freq, date
-// 	ORDER BY varname, form, freq, date
-// ) a
-// ", $vars_to_bind);
 
-}));
+router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['admin', 'webapp']), function(req, res, next) {
+
+	// Returns the latest forecasts for a given variable
+	// Allows selection of:
+	//  - 1+ varname (passing none returns error)
+	//  - null, 1, or 2+ forecasts (passing nothing returns all forecasts)
+	//  - null, 1, or 2+ frequency (passing nothing returns highest frequency)
+
+	if (is_invalid_params(req.query, 'varname')) return res.status(400).send('Missing query varname')
+
+	const varnames = (req.query.get('varname') ?? '').split(',').slice(0, 5);  // Returns array of varnames
+	const forecasts = req.query.get('forecast') ? req.query.get('forecast').split(',').slice(0, 10) : null;  // Returns array of forecasts
+
+	const include_all_forecasts = forecasts === null;
+
+	console.error(forecasts, include_all_forecasts);
+
+	if (req.query.get('freq') == null) {
+
+		// Get lowest frequency available for each varname x forecast
+		const query_text = `
+		SELECT
+			b.varname, b.freq, b.forecast,
+			json_agg(json_build_object(
+				'date', b.date, 'vintage_date', b.vdate, 'value', ROUND(b.d1, 2), 'value2', ROUND(b.d2, 2)
+			)) AS data
+		FROM 
+			(
+			SELECT
+				varname, freq, forecast, MIN(freq_level) OVER (PARTITION BY varname) AS min_freq_level
+			FROM 
+				(
+				SELECT
+					varname, freq, forecast,
+					CASE
+						WHEN freq = 'm' THEN 0
+						WHEN freq = 'q' THEN 1
+						ELSE 2
+					END AS freq_level
+				FROM forecast_values_v2_latest 
+				GROUP BY varname, freq, forecast
+				) c
+			) a
+		LEFT JOIN forecast_values_v2_latest b
+			ON a.varname = b.varname AND a.freq = b.freq 
+		WHERE
+			a.varname = ANY ($1)
+			${include_all_forecasts === true ? '' : 'AND a.forecast = ANY ($2)'}
+			AND a.min_freq_level = a.min_freq_level	
+		GROUP BY b.varname, b.freq, b.forecast
+		`;
+		console.error(query_text);
+		const query_params = (include_all_forecasts === true ? [varnames] : [varnames, forecasts]);
+
+		pool.query({text: query_text, values: query_params})
+		.then(db_result => {
+			const data = db_result.rows;
+			res.status(200).json(data);
+		})
+		.catch(err => next(err));
+
+	} else {
+
+		const freq = req.query.get('freq') ?? '';  // Returns array of varnames
+
+		const query_text = `
+		SELECT
+			varname, freq, forecast,
+			json_agg(json_build_object('date', date, 'vintage_date', vdate, 'value', ROUND(d1, 2), 'value2', ROUND(d2, 2))) AS data
+		FROM forecast_values_v2_latest
+		WHERE
+			varname = ANY ($1)
+			AND freq = $2::TEXT
+			${include_all_forecasts === true ? '' : 'AND forecast = ANY ($3)'}
+		GROUP BY varname, forecast, freq
+		`;
+
+		const query_params = (include_all_forecasts === true ? [varnames, freq] : [varnames, freq, forecasts]);
+
+		pool.query({text: query_text, values: query_params})
+		.then(db_result => {
+			const data = db_result.rows;
+			res.status(200).json(data);
+		})
+		.catch(err => next(err));
+	}
+
+});
+
+
+
+
+
+
+
+
+
 
 
 
