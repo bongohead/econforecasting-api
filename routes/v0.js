@@ -27,10 +27,7 @@ router.get('/get_forecast_variable', authenticateToken, verifyPermissions(['admi
     LIMIT 1
 	`
 
-	pool.query({
-		text: query_text,
-		values: [varname]
-		})
+	pool.query({text: query_text, values: [varname]})
 	.then(db_result => {
 		const data = db_result.rows;
 		res.status(200).json(data);
@@ -42,7 +39,9 @@ router.get('/get_forecast_variable', authenticateToken, verifyPermissions(['admi
 
 router.get('/get_hist_obs', authenticateToken, verifyPermissions(['admin', 'webapp']), function(req, res, next) {
 
-	// Returns the last historical data by the last vintage date for the given variable.
+	// Returns the last historical data by the last vintage date for the given variable(s).
+	// Each sub-object uniquely represents a variable x frequency.
+
 	// Takes as input a string/comma-delimited string of varnames, a string/comma-delimited of freqs, and a string/comma-delimited/null of forms
 	// Allows selection of:
 	//  - 1+ varname (passing none returns error)
@@ -59,9 +58,7 @@ router.get('/get_hist_obs', authenticateToken, verifyPermissions(['admin', 'weba
 		const query_text = `
 		SELECT
 			b.varname, b.freq,
-			json_agg(json_build_object(
-				'date', b.date, 'vintage_date', b.vdate, 'value', ROUND(b.d1, 2), 'value2', ROUND(b.d2, 2)
-			)) AS data
+			json_agg(json_build_object('date', b.date, 'vdate', b.vdate, 'value', ROUND(b.d1, 2), 'value2', ROUND(b.d2, 2))) AS data
 		FROM 
 			(
 			SELECT
@@ -80,7 +77,7 @@ router.get('/get_hist_obs', authenticateToken, verifyPermissions(['admin', 'weba
 				) c
 			) a
 		LEFT JOIN forecast_hist_values_v2_latest b
-			ON a.varname = b.varname AND a.freq = b.freq 
+			ON a.varname = b.varname AND a.freq = b.freq
 		WHERE
 			a.varname = ANY ($1)
 			AND a.min_freq_level = a.min_freq_level	
@@ -88,10 +85,7 @@ router.get('/get_hist_obs', authenticateToken, verifyPermissions(['admin', 'weba
 		LIMIT 10000
 		`;
 
-		pool.query({
-			text: query_text,
-			values: [varnames]
-			})
+		pool.query({text: query_text, values: [varnames]})
 		.then(db_result => {
 			const data = db_result.rows;
 			res.status(200).json(data);
@@ -105,9 +99,7 @@ router.get('/get_hist_obs', authenticateToken, verifyPermissions(['admin', 'weba
 		const query_text = `
 		SELECT
 			varname, freq,
-			json_agg(json_build_object(
-				'date', date, 'vintage_date', vdate, 'value', ROUND(d1, 2), 'value2', ROUND(d2, 2)
-			)) AS data
+			json_agg(json_build_object('date', date, 'vdate', vdate, 'value', ROUND(d1, 2), 'value2', ROUND(d2, 2))) AS data
 		FROM forecast_hist_values_v2_latest
 		WHERE
 			varname = ANY ($1)
@@ -116,10 +108,7 @@ router.get('/get_hist_obs', authenticateToken, verifyPermissions(['admin', 'weba
 		LIMIT 10000
 		`;
 
-		pool.query({
-			text: query_text,
-			values: [varnames, freq]
-			})
+		pool.query({text: query_text, values: [varnames, freq]})
 		.then(db_result => {
 			const data = db_result.rows;
 			res.status(200).json(data);
@@ -133,7 +122,9 @@ router.get('/get_hist_obs', authenticateToken, verifyPermissions(['admin', 'weba
 
 router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['admin', 'webapp']), function(req, res, next) {
 
-	// Returns the latest forecasts for a given variable
+	// Returns the latest forecasts for a given variable.
+	// Each result returns group a variable x forecast
+
 	// Allows selection of:
 	//  - 1+ varname (passing none returns error)
 	//  - null, 1, or 2+ forecasts (passing nothing returns all forecasts)
@@ -154,9 +145,12 @@ router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['ad
 		const query_text = `
 		SELECT
 			b.varname, b.freq, b.forecast,
-			json_agg(json_build_object(
-				'date', b.date, 'vintage_date', b.vdate, 'value', ROUND(b.d1, 2), 'value2', ROUND(b.d2, 2)
-			)) AS data
+			MIN(f.shortname) as shortname,
+			MIN(f.fullname) AS fullname,
+			MIN(f.description) AS description,
+			MIN(f.EXTERNAL::INT) AS external,
+			MIN(b.vdate) AS vdate,
+			json_agg(json_build_object('date', b.date, 'value', ROUND(b.d1, 2), 'value2', ROUND(b.d2, 2))) AS data
 		FROM 
 			(
 			SELECT
@@ -175,14 +169,15 @@ router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['ad
 				) c
 			) a
 		LEFT JOIN forecast_values_v2_latest b
-			ON a.varname = b.varname AND a.freq = b.freq 
+			ON a.varname = b.varname AND a.freq = b.freq
+		LEFT JOIN forecasts f ON b.forecast = f.id 
 		WHERE
 			a.varname = ANY ($1)
 			${include_all_forecasts === true ? '' : 'AND a.forecast = ANY ($2)'}
 			AND a.min_freq_level = a.min_freq_level	
 		GROUP BY b.varname, b.freq, b.forecast
 		`;
-		console.error(query_text);
+
 		const query_params = (include_all_forecasts === true ? [varnames] : [varnames, forecasts]);
 
 		pool.query({text: query_text, values: query_params})
@@ -198,14 +193,20 @@ router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['ad
 
 		const query_text = `
 		SELECT
-			varname, freq, forecast,
-			json_agg(json_build_object('date', date, 'vintage_date', vdate, 'value', ROUND(d1, 2), 'value2', ROUND(d2, 2))) AS data
-		FROM forecast_values_v2_latest
+			a.varname, a.freq, a.forecast,
+			MIN(f.shortname) as shortname,
+			MIN(f.fullname) AS fullname,
+			MIN(f.description) AS description,
+			MIN(f.EXTERNAL::INT) AS external,
+			MIN(f.vdate) AS vdate,
+			json_agg(json_build_object('date', date, 'value', ROUND(d1, 2), 'value2', ROUND(d2, 2))) AS data
+		FROM forecast_values_v2_latest a
+		LEFT JOIN forecasts f ON b.forecast = f.id 
 		WHERE
 			varname = ANY ($1)
 			AND freq = $2::TEXT
 			${include_all_forecasts === true ? '' : 'AND forecast = ANY ($3)'}
-		GROUP BY varname, forecast, freq
+		GROUP BY a.varname, a.forecast, a.freq
 		`;
 
 		const query_params = (include_all_forecasts === true ? [varnames, freq] : [varnames, freq, forecasts]);
