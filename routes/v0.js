@@ -137,7 +137,6 @@ router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['ad
 
 	const include_all_forecasts = forecasts === null;
 
-	console.error(forecasts, include_all_forecasts);
 
 	if (req.query.get('freq') == null) {
 
@@ -223,8 +222,90 @@ router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['ad
 
 
 
+router.get('/get_monthly_vintage_forecast_obs', authenticateToken, verifyPermissions(['admin', 'webapp']), function(req, res, next) {
+
+	// Returns the monthly vintage forecasts for a given variable. Always assumes one frequency per forecast.
+
+	// Allows selection of:
+	//  - 1 varname (passing none returns error)
+	//  - 1 forecast (primary forecast)
+
+	if (is_invalid_params(req.query, 'varname')) return res.status(400).send('Missing query varname')
+	if (is_invalid_params(req.query, 'forecast')) return res.status(400).send('Missing query forecast')
+
+	const varname = req.query.get('varname') ?? '';
+	const forecast = req.query.get('forecast') ?? ''
 
 
+	// Get lowest frequency available for each varname x forecast
+	const query_text = `
+	SELECT date, vdate, d1 FROM (
+		SELECT date, vdate, d1, agg_vdate, MIN(vdate) OVER (PARTITION BY agg_vdate) AS min_vdate_per_month FROM (
+			SELECT 
+				date, vdate, d1, DATE(date_trunc('month', vdate)) AS agg_vdate, COUNT(*) OVER (PARTITION BY vdate) AS vdate_count
+			FROM forecast_values_v2_all
+			WHERE 
+				varname = $1::TEXT
+				AND forecast = $2::TEXT
+				AND vdate < date
+				AND vdate >= NOW() - INTERVAL '3 YEARS'
+				AND date < vdate + INTERVAL '3 YEARS'
+			ORDER BY date, vdate
+			) a
+		WHERE vdate_count >= 5
+		) b 
+	WHERE min_vdate_per_month = vdate
+	ORDER BY vdate, date
+	`;
+
+	pool.query({text: query_text, values: [varname, forecast]})
+	.then(db_result => {
+		const data = db_result.rows;
+		res.status(200).json(data);
+	})
+	.catch(err => next(err));
+
+
+});
+
+
+
+/*
+<?php
+// Returns first forecast for each month
+// Takes as input a variable, frequency, form, and 1+ forecasts.
+$vars_to_bind = array(
+	'varname' => isset($fromAjax['varname']) ? $fromAjax['varname'] : '',  // If null, set as ''
+	'freq' => isset($fromAjax['freq']) ? $fromAjax['freq'] : '', // If null, set as ''
+	'forecast' => isset($fromAjax['forecast'])? $fromAjax['forecast'] : '', // If null, set as ''
+	'form' => isset($fromAjax['form']) ? $fromAjax['form'] : '', // If null, set as ''
+	);
+
+// Get first vdates of each month that have at least 5 data counts
+$forecast_vintage_values = $sql -> select(
+"
+SELECT date, vdate, value FROM (
+	SELECT date, vdate, value, agg_vdate, MIN(vdate) OVER (PARTITION BY agg_vdate) AS min_vdate_per_month FROM (
+		SELECT 
+			date, vdate, value, DATE(date_trunc('month', vdate)) AS agg_vdate, COUNT(*) OVER (PARTITION BY vdate) AS vdate_count
+		FROM forecast_values
+		WHERE 
+			varname = :varname
+			AND freq = :freq
+			AND forecast = :forecast
+			AND form = :form
+			AND vdate < date
+			AND vdate >= NOW() - INTERVAL '3 YEARS'
+			AND date < vdate + INTERVAL '3 YEARS'
+		ORDER BY date, vdate
+		) a
+	WHERE vdate_count >= 5
+	) b 
+WHERE min_vdate_per_month = vdate
+ORDER BY vdate, date
+", $vars_to_bind);
+
+*/
 
 
 
