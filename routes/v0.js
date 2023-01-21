@@ -51,7 +51,7 @@ router.get('/get_hist_obs', authenticateToken, verifyPermissions(['admin', 'weba
 	//   i.e. varname = ANY('{gdp, pce}'::VARCHAR[])
 
 	if (is_invalid_params(req.query, 'varname')) return res.status(400).send('Missing query varname')
-	const varnames = (req.query.get('varname') ?? '').split(',').slice(0, 5);  // Returns array of varnames
+	const varnames = (req.query.get('varname') ?? '').split(',').slice(0, 15);  // Returns array of varnames
 
 	if (req.query.get('freq') == null) {
 		// Get lowest frequency available for each varname
@@ -132,8 +132,8 @@ router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['ad
 
 	if (is_invalid_params(req.query, 'varname')) return res.status(400).send('Missing query varname')
 
-	const varnames = (req.query.get('varname') ?? '').split(',').slice(0, 5);  // Returns array of varnames
-	const forecasts = req.query.get('forecast') ? req.query.get('forecast').split(',').slice(0, 10) : null;  // Returns array of forecasts
+	const varnames = (req.query.get('varname') ?? '').split(',').slice(0, 15);  // Returns array of varnames
+	const forecasts = req.query.get('forecast') ? req.query.get('forecast').split(',').slice(0, 15) : null;  // Returns array of forecasts
 
 	const include_all_forecasts = forecasts === null;
 
@@ -168,13 +168,14 @@ router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['ad
 				) c
 			) a
 		LEFT JOIN forecast_values_v2_latest b
-			ON a.varname = b.varname AND a.freq = b.freq
+			ON a.varname = b.varname AND a.freq = b.freq AND a.forecast = b.forecast
 		LEFT JOIN forecasts f ON b.forecast = f.id 
 		WHERE
 			a.varname = ANY ($1)
 			${include_all_forecasts === true ? '' : 'AND a.forecast = ANY ($2)'}
 			AND a.min_freq_level = a.min_freq_level	
 		GROUP BY b.varname, b.freq, b.forecast
+		LIMIT 10000
 		`;
 
 		const query_params = (include_all_forecasts === true ? [varnames] : [varnames, forecasts]);
@@ -206,6 +207,7 @@ router.get('/get_latest_forecast_obs', authenticateToken, verifyPermissions(['ad
 			AND freq = $2::TEXT
 			${include_all_forecasts === true ? '' : 'AND forecast = ANY ($3)'}
 		GROUP BY a.varname, a.forecast, a.freq
+		LIMIT 10000
 		`;
 
 		const query_params = (include_all_forecasts === true ? [varnames, freq] : [varnames, freq, forecasts]);
@@ -256,6 +258,7 @@ router.get('/get_monthly_vintage_forecast_obs', authenticateToken, verifyPermiss
 		) b 
 	WHERE min_vdate_per_month = vdate
 	ORDER BY vdate, date
+	LIMIT 10000
 	`;
 
 	pool.query({text: query_text, values: [varname, forecast]})
