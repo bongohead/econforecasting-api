@@ -34,7 +34,17 @@ app.set('query parser', (queryString) => {
 app.use(helmet());
 
 // Enable CORS for all routes
-app.use(cors());
+const allowlist = ['https://dev1.econscale.com', 'https://dev.econscale.com', 'https://econforecasting.com']
+const corsOptionsDelegate = function (req, callback) {
+  const origin = (allowlist.indexOf(req.header('Origin')) !== -1) ? true : false;
+  const corsOptions = {
+    origin: origin,
+    methods: ['GET', 'POST'],
+    maxAge: 600
+  }
+  callback(null, corsOptions) // callback expects two parameters: error and options
+}
+app.use(cors(corsOptionsDelegate));
 
 // Use body-parser as middleware to decode POST content
 app.use(bodyParser.json());
